@@ -1,0 +1,452 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
+  <title>Admin — Golf Betting</title>
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    :root {
+      --green-dark:  #1a5c1a;
+      --green-mid:   #2e7d2e;
+      --green-light: #e8f5e9;
+      --amber:       #f57c00;
+      --red:         #c62828;
+      --bg:          #f0f2f0;
+    }
+
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+      background: var(--bg);
+      color: #1a1a1a;
+    }
+
+    header {
+      background: #333;
+      color: white;
+      padding: 14px 16px;
+      text-align: center;
+    }
+    header h1 { font-size: 1.1rem; font-weight: 800; }
+    header p  { font-size: 0.78rem; opacity: 0.7; margin-top: 3px; }
+
+    .container { padding: 16px; max-width: 520px; margin: 0 auto; }
+
+    .card {
+      background: white;
+      border-radius: 12px;
+      padding: 16px;
+      margin-bottom: 14px;
+      box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+    }
+    .card-title {
+      font-size: 0.75rem;
+      font-weight: 700;
+      text-transform: uppercase;
+      color: #777;
+      letter-spacing: 0.5px;
+      margin-bottom: 14px;
+    }
+
+    label { display: block; font-weight: 600; font-size: 0.88rem; margin-bottom: 5px; color: #333; }
+
+    select {
+      width: 100%;
+      padding: 12px;
+      border: 1.5px solid #d0d0d0;
+      border-radius: 8px;
+      font-size: 1rem;
+      margin-bottom: 14px;
+      background: #fafafa;
+      -webkit-appearance: none;
+      appearance: none;
+    }
+    select:focus { outline: none; border-color: var(--green-mid); }
+
+    .btn {
+      width: 100%;
+      padding: 13px;
+      border: none;
+      border-radius: 9px;
+      font-size: 0.95rem;
+      font-weight: 700;
+      cursor: pointer;
+      margin-bottom: 8px;
+    }
+    .btn-green  { background: var(--green-dark); color: white; }
+    .btn-amber  { background: var(--amber); color: white; }
+    .btn-red    { background: var(--red); color: white; }
+    .btn-gray   { background: #888; color: white; }
+    .btn:hover  { opacity: 0.88; }
+    .btn:disabled { background: #ccc; cursor: not-allowed; }
+
+    .status-row {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin-bottom: 12px;
+    }
+    .status-label { font-weight: 600; font-size: 0.9rem; }
+    .badge {
+      display: inline-block;
+      padding: 3px 12px;
+      border-radius: 12px;
+      font-size: 0.78rem;
+      font-weight: 700;
+      text-transform: uppercase;
+    }
+    .badge-open   { background: #4caf50; color: white; }
+    .badge-closed { background: #ff9800; color: white; }
+    .badge-final  { background: #1976d2; color: white; }
+
+    .btn-row { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+    .btn-row .btn { margin-bottom: 0; }
+
+    .msg-error   { background: #ffebee; color: #c62828; border-radius: 8px; padding: 10px 12px; font-size: 0.87rem; margin-bottom: 10px; }
+    .msg-success { background: var(--green-light); color: #1b5e20; border-radius: 8px; padding: 10px 12px; font-size: 0.87rem; margin-bottom: 10px; }
+
+    /* Stats */
+    .stats-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; margin-bottom: 4px; }
+    .stat-box { background: #f7f7f7; border-radius: 8px; padding: 10px; text-align: center; }
+    .stat-val   { font-size: 1.2rem; font-weight: 800; color: var(--green-dark); }
+    .stat-label { font-size: 0.7rem; color: #888; text-transform: uppercase; margin-top: 2px; }
+
+    /* Payout table */
+    table { width: 100%; border-collapse: collapse; font-size: 0.85rem; }
+    thead th { text-align: left; padding: 6px 5px 8px; color: #888; font-size: 0.72rem; text-transform: uppercase; border-bottom: 2px solid #eee; }
+    tbody td { padding: 9px 5px; border-bottom: 1px solid #f2f2f2; }
+    tbody tr:last-child td { border-bottom: none; }
+
+    .pill {
+      display: inline-block;
+      padding: 1px 6px;
+      border-radius: 4px;
+      font-size: 0.68rem;
+      font-weight: 700;
+      text-transform: uppercase;
+    }
+    .pill-win  { background: var(--green-dark); color: white; }
+    .pill-show { background: var(--amber); color: white; }
+
+    .payout-win  { color: var(--green-dark); font-weight: 800; }
+    .payout-zero { color: #bbb; }
+
+    .net-win  { color: var(--green-dark); font-weight: 800; }
+    .net-loss { color: var(--red); font-weight: 700; }
+    .net-even { color: #888; }
+
+    .divider { border: none; border-top: 1px solid #eee; margin: 12px 0; }
+
+    .handicap-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 6px; }
+    .hcp-item { display: flex; justify-content: space-between; align-items: center; padding: 7px 10px; background: #f7f7f7; border-radius: 6px; font-size: 0.85rem; }
+    .hcp-name { font-weight: 600; }
+    .hcp-val  { color: #555; font-size: 0.8rem; }
+  </style>
+</head>
+<body>
+
+<header>
+  <h1>Admin Panel</h1>
+  <p>Golf Tournament Betting</p>
+</header>
+
+<div class="container">
+
+  <!-- Status & Controls -->
+  <div class="card">
+    <div class="card-title">Betting Status</div>
+    <div class="status-row">
+      <span class="status-label">Current Status:</span>
+      <span id="status-badge" class="badge badge-open">Open</span>
+    </div>
+    <div id="ctrl-msg"></div>
+    <div class="btn-row">
+      <button class="btn btn-green" id="btn-open"  onclick="setStatus('open')">Open Betting</button>
+      <button class="btn btn-amber" id="btn-close" onclick="setStatus('closed')">Close Betting</button>
+    </div>
+  </div>
+
+  <!-- Live Stats -->
+  <div class="card">
+    <div class="card-title">Live Stats</div>
+    <div class="stats-grid">
+      <div class="stat-box">
+        <div class="stat-val" id="stat-bets">0</div>
+        <div class="stat-label">Bets</div>
+      </div>
+      <div class="stat-box">
+        <div class="stat-val" id="stat-win">$0</div>
+        <div class="stat-label">Win Pool</div>
+      </div>
+      <div class="stat-box">
+        <div class="stat-val" id="stat-show">$0</div>
+        <div class="stat-label">Show Pool</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Results Entry -->
+  <div class="card" id="results-card">
+    <div class="card-title">Enter Results</div>
+    <div id="results-msg"></div>
+
+    <label for="sel-1st">1st Place</label>
+    <select id="sel-1st"><option value="">-- Select --</option></select>
+
+    <label for="sel-2nd">2nd Place</label>
+    <select id="sel-2nd"><option value="">-- Select --</option></select>
+
+    <label for="sel-3rd">3rd Place</label>
+    <select id="sel-3rd"><option value="">-- Select --</option></select>
+
+    <button class="btn btn-green" onclick="submitResults()">Calculate Payouts</button>
+  </div>
+
+  <!-- Payouts (shown after results) -->
+  <div id="payouts-section" style="display:none">
+
+    <div class="card" id="results-summary-card">
+      <div class="card-title">Results</div>
+      <div id="results-summary"></div>
+    </div>
+
+    <div class="card">
+      <div class="card-title">Payout Summary (by Bettor)</div>
+      <table>
+        <thead>
+          <tr>
+            <th>Bettor</th>
+            <th style="text-align:right">Wagered</th>
+            <th style="text-align:right">Payout</th>
+            <th style="text-align:right">Net</th>
+          </tr>
+        </thead>
+        <tbody id="summary-tbody"></tbody>
+      </table>
+    </div>
+
+    <div class="card">
+      <div class="card-title">Individual Bet Detail</div>
+      <table>
+        <thead>
+          <tr>
+            <th>Bettor</th>
+            <th>Bet</th>
+            <th style="text-align:right">Wagered</th>
+            <th style="text-align:right">Payout</th>
+          </tr>
+        </thead>
+        <tbody id="detail-tbody"></tbody>
+      </table>
+    </div>
+
+  </div>
+
+  <!-- Handicaps Reference -->
+  <div class="card">
+    <div class="card-title">Handicap Reference</div>
+    <div class="handicap-grid" id="hcp-grid"></div>
+    <p style="font-size:0.73rem;color:#aaa;margin-top:10px">Edit handicaps in <code>server.js</code> ENTRANTS config.</p>
+  </div>
+
+  <!-- Danger Zone -->
+  <div class="card">
+    <div class="card-title">Danger Zone</div>
+    <button class="btn btn-red" onclick="resetAll()">Reset All Bets &amp; Results</button>
+  </div>
+
+</div>
+
+<script>
+  let appState = null;
+
+  function fmt(n) {
+    return '$' + n.toFixed(2).replace(/\B(?=(\d{3})+(?!\d))/g, ',');
+  }
+
+  function fmtShort(n) {
+    if (n >= 1000) return '$' + (n / 1000).toFixed(1) + 'k';
+    return '$' + Math.round(n);
+  }
+
+  function renderState(s) {
+    appState = s;
+
+    // Status badge
+    const badge = document.getElementById('status-badge');
+    const labels = { open: 'Open', closed: 'Closed', final: 'Final' };
+    badge.textContent = labels[s.status] || s.status;
+    badge.className = 'badge badge-' + s.status;
+
+    // Stats
+    document.getElementById('stat-bets').textContent  = s.bets.length;
+    document.getElementById('stat-win').textContent   = fmtShort(s.winPool);
+    document.getElementById('stat-show').textContent  = fmtShort(s.showPool);
+
+    // Populate selects (once)
+    const sels = ['sel-1st', 'sel-2nd', 'sel-3rd'];
+    if (document.getElementById('sel-1st').options.length <= 1) {
+      sels.forEach(id => {
+        const sel = document.getElementById(id);
+        s.entrants.forEach(e => {
+          const o = document.createElement('option');
+          o.value = e.name;
+          o.textContent = e.name;
+          sel.appendChild(o);
+        });
+      });
+    }
+
+    // Handicap grid
+    const grid = document.getElementById('hcp-grid');
+    if (!grid.children.length) {
+      grid.innerHTML = s.entrants.map(e =>
+        `<div class="hcp-item">
+          <span class="hcp-name">${e.name.split(' ').pop()}</span>
+          <span class="hcp-val">${e.handicap}</span>
+        </div>`
+      ).join('');
+    }
+
+    // Payouts
+    if (s.status === 'final' && s.payouts && s.results) {
+      document.getElementById('payouts-section').style.display = 'block';
+      document.getElementById('results-card').style.display = 'none';
+      renderPayouts(s);
+    } else {
+      document.getElementById('payouts-section').style.display = 'none';
+      document.getElementById('results-card').style.display = 'block';
+    }
+  }
+
+  function renderPayouts(s) {
+    const [first, second, third] = s.results;
+
+    // Summary
+    document.getElementById('results-summary').innerHTML = `
+      <p style="font-size:1rem;font-weight:700;color:#1a5c1a;padding:4px 0">🥇 ${first}</p>
+      <p style="font-size:0.95rem;font-weight:600;padding:4px 0">🥈 ${second}</p>
+      <p style="font-size:0.95rem;font-weight:600;padding:4px 0">🥉 ${third}</p>
+    `;
+
+    // Aggregate by bettor
+    const agg = {};
+    s.payouts.forEach(p => {
+      if (!agg[p.bettor]) agg[p.bettor] = { bet: 0, payout: 0 };
+      agg[p.bettor].bet    += p.amount;
+      agg[p.bettor].payout += p.payout;
+    });
+
+    const summaryRows = Object.entries(agg)
+      .map(([name, { bet, payout }]) => ({ name, bet, payout, net: payout - bet }))
+      .sort((a, b) => b.payout - a.payout);
+
+    document.getElementById('summary-tbody').innerHTML = summaryRows.map(r => {
+      const cls  = r.net > 0 ? 'net-win' : r.net < 0 ? 'net-loss' : 'net-even';
+      const sign = r.net > 0 ? '+' : '';
+      return `<tr>
+        <td><strong>${r.name}</strong></td>
+        <td style="text-align:right">${fmt(r.bet)}</td>
+        <td style="text-align:right">${r.payout > 0 ? fmt(r.payout) : '—'}</td>
+        <td style="text-align:right" class="${cls}">${sign}${fmt(r.net)}</td>
+      </tr>`;
+    }).join('');
+
+    // Detail
+    const details = [...s.payouts].sort((a, b) => b.payout - a.payout);
+    document.getElementById('detail-tbody').innerHTML = details.map(p => `
+      <tr>
+        <td>${p.bettor}</td>
+        <td><span class="pill pill-${p.type}">${p.type}</span> ${p.entrant}</td>
+        <td style="text-align:right">${fmt(p.amount)}</td>
+        <td style="text-align:right" class="${p.payout > 0 ? 'payout-win' : 'payout-zero'}">
+          ${p.payout > 0 ? fmt(p.payout) : '—'}
+        </td>
+      </tr>
+    `).join('');
+  }
+
+  async function fetchState() {
+    try {
+      const res = await fetch('/api/state');
+      if (res.ok) renderState(await res.json());
+    } catch (e) { /* silent */ }
+  }
+
+  async function setStatus(status) {
+    const msgEl = document.getElementById('ctrl-msg');
+    try {
+      const res = await fetch('/api/admin/status', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ status })
+      });
+      const data = await res.json();
+      if (!res.ok) {
+        msgEl.innerHTML = `<div class="msg-error">${data.error}</div>`;
+      } else {
+        msgEl.innerHTML = `<div class="msg-success">Betting ${status === 'open' ? 'opened' : 'closed'}.</div>`;
+        fetchState();
+      }
+    } catch (e) {
+      msgEl.innerHTML = '<div class="msg-error">Network error.</div>';
+    }
+  }
+
+  async function submitResults() {
+    const first  = document.getElementById('sel-1st').value;
+    const second = document.getElementById('sel-2nd').value;
+    const third  = document.getElementById('sel-3rd').value;
+    const msgEl  = document.getElementById('results-msg');
+
+    msgEl.innerHTML = '';
+
+    if (!first || !second || !third) {
+      msgEl.innerHTML = '<div class="msg-error">Select all 3 places.</div>'; return;
+    }
+    if (new Set([first, second, third]).size !== 3) {
+      msgEl.innerHTML = '<div class="msg-error">All 3 must be different players.</div>'; return;
+    }
+
+    if (!confirm(`Confirm results?\n\n1st: ${first}\n2nd: ${second}\n3rd: ${third}\n\nThis will close betting and calculate payouts.`)) return;
+
+    try {
+      const res = await fetch('/api/results', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ first, second, third })
+      });
+      const data = await res.json();
+      if (!res.ok) {
+        msgEl.innerHTML = `<div class="msg-error">${data.error}</div>`;
+      } else {
+        fetchState();
+      }
+    } catch (e) {
+      msgEl.innerHTML = '<div class="msg-error">Network error.</div>';
+    }
+  }
+
+  async function resetAll() {
+    if (!confirm('RESET ALL BETS AND RESULTS?\n\nThis cannot be undone.')) return;
+    if (!confirm('Are you sure? All bets will be permanently deleted.')) return;
+
+    try {
+      const res = await fetch('/api/admin/reset', { method: 'POST' });
+      if (res.ok) {
+        document.getElementById('ctrl-msg').innerHTML = '<div class="msg-success">All data reset.</div>';
+        // Clear select values
+        ['sel-1st','sel-2nd','sel-3rd'].forEach(id => document.getElementById(id).value = '');
+        fetchState();
+      }
+    } catch (e) {
+      document.getElementById('ctrl-msg').innerHTML = '<div class="msg-error">Network error.</div>';
+    }
+  }
+
+  fetchState();
+  setInterval(fetchState, 10000);
+</script>
+</body>
+</html>
