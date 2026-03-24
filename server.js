@@ -10,18 +10,18 @@ const PORT = process.env.PORT || 3000;
 // ENTRANT CONFIG — edit names and handicaps here
 // ============================================================
 const ENTRANTS = [
-  { name: "James Chase",       handicap: 9.1  },
-  { name: "Dustin Hatcher",    handicap: 7.5  },
-  { name: "Stephen Culpepper", handicap: 9.2  },
-  { name: "Braxton Smith",     handicap: 9.6  },
-  { name: "Fleet Jernigan",    handicap: 10.7 },
-  { name: "Jack Konstanzer",   handicap: 10.0 },
-  { name: "Max Konstanzer",    handicap: 18.5 },
-  { name: "Carter Baum",       handicap: 19.0 },
-  { name: "Tommy Taylor",      handicap: 21.0 },
-  { name: "Aaron Stroker",     handicap: 18.5 },
-  { name: "Thomas Nader",      handicap: 15.1 },
-  { name: "Nick Graham",       handicap: 16.2 },
+  { name: "James Chase",       handicap: 9  },
+  { name: "Dustin Hatcher",    handicap: 8  },
+  { name: "Stephen Culpepper", handicap: 9  },
+  { name: "Braxton Smith",     handicap: 9  },
+  { name: "Fleet Jernigan",    handicap: 11 },
+  { name: "Jack Konstanzer",   handicap: 10 },
+  { name: "Max Konstanzer",    handicap: 18 },
+  { name: "Carter Baum",       handicap: 19 },
+  { name: "Tommy Taylor",      handicap: 20 },
+  { name: "Aaron Stroker",     handicap: 18 },
+  { name: "Thomas Nader",      handicap: 15 },
+  { name: "Nick Graham",       handicap: 16 },
 ];
 // ============================================================
 
