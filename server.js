@@ -75,29 +75,51 @@ function computePayouts(bets, results) {
   const winPool  = bets.filter(b => b.type === 'win').reduce((s, b) => s + b.amount, 0);
   const showPool = bets.filter(b => b.type === 'show').reduce((s, b) => s + b.amount, 0);
 
-  // Only show-place finishers who have actual show bets share the pool
-  const coveredShowPlaces = showPlaces.filter(entrant =>
-    bets.some(b => b.type === 'show' && b.entrant === entrant)
-  );
-  const showSharePerPlace = coveredShowPlaces.length > 0 ? showPool / coveredShowPlaces.length : 0;
-
+  // --- Win pool ---
   const totalWinOnWinner = bets
     .filter(b => b.type === 'win' && b.entrant === first)
     .reduce((s, b) => s + b.amount, 0);
+  // If nobody bet on the winner, refund all win bets.
+  const winRefund = winPool > 0 && totalWinOnWinner === 0;
+
+  // --- Show pool ---
+  // Of the top-3 finishers, which ones actually received show bets?
+  // Finishers with no show bets have their share redistributed to the covered places.
+  const coveredShowPlaces = showPlaces.filter(entrant =>
+    bets.some(b => b.type === 'show' && b.entrant === entrant)
+  );
+  // If none of the top-3 finishers received show bets, refund all show bets.
+  const showRefund = showPool > 0 && coveredShowPlaces.length === 0;
+  const showSharePerPlace = coveredShowPlaces.length > 0
+    ? showPool / coveredShowPlaces.length
+    : 0;
 
   return bets.map(bet => {
     let payout = 0;
+    let refund  = false;
 
-    if (bet.type === 'win' && bet.entrant === first && totalWinOnWinner > 0) {
-      payout = (bet.amount / totalWinOnWinner) * winPool;
-    } else if (bet.type === 'show' && coveredShowPlaces.includes(bet.entrant)) {
-      const entrantShowTotal = bets
-        .filter(b => b.type === 'show' && b.entrant === bet.entrant)
-        .reduce((s, b) => s + b.amount, 0);
-      payout = (bet.amount / entrantShowTotal) * showSharePerPlace;
+    if (bet.type === 'win') {
+      if (winRefund) {
+        // Nobody picked the winner — return everyone's stake
+        payout = bet.amount;
+        refund  = true;
+      } else if (bet.entrant === first) {
+        payout = (bet.amount / totalWinOnWinner) * winPool;
+      }
+    } else if (bet.type === 'show') {
+      if (showRefund) {
+        // None of top-3 were backed to show — return everyone's stake
+        payout = bet.amount;
+        refund  = true;
+      } else if (coveredShowPlaces.includes(bet.entrant)) {
+        const entrantShowTotal = bets
+          .filter(b => b.type === 'show' && b.entrant === bet.entrant)
+          .reduce((s, b) => s + b.amount, 0);
+        payout = (bet.amount / entrantShowTotal) * showSharePerPlace;
+      }
     }
 
-    return { ...bet, payout: Math.round(payout * 100) / 100 };
+    return { ...bet, payout: Math.round(payout * 100) / 100, refund };
   });
 }
 

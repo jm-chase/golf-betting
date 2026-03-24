@@ -314,7 +314,7 @@
       <div class="pool-amount" id="show-pool">$0.00</div>
     </div>
   </div>
-  <p class="odds-note">Odds show estimated payout per $1 bet if pools closed now. Show odds assume 3 covered finishers.</p>
+  <p class="odds-note">Estimated payout per $1 bet if pools closed now. Show odds assume all 3 top finishers have bets — actual payout may be higher if some don't.</p>
   <div class="card" style="padding:12px 10px">
     <table>
       <thead>
@@ -464,6 +464,13 @@
     // Detail rows sorted by payout desc
     const details = [...s.payouts].sort((a, b) => b.payout - a.payout);
 
+    // Note any pool-level refund conditions for the info banner
+    const winRefundTriggered  = s.payouts.some(p => p.type === 'win'  && p.refund);
+    const showRefundTriggered = s.payouts.some(p => p.type === 'show' && p.refund);
+    const refundNotes = [];
+    if (winRefundTriggered)  refundNotes.push('No one picked the winner — all win bets refunded.');
+    if (showRefundTriggered) refundNotes.push('None of the top 3 had show bets — all show bets refunded.');
+
     let html = `
       <div class="results-box">
         <h3>Final Results</h3>
@@ -471,6 +478,8 @@
         <div class="result-line">🥈 2nd — ${second}</div>
         <div class="result-line">🥉 3rd — ${third}</div>
       </div>
+
+      ${refundNotes.map(n => `<div style="background:#fff3e0;border:1px solid #ffcc80;border-radius:8px;padding:10px 12px;font-size:0.85rem;color:#e65100;margin-bottom:12px">${n}</div>`).join('')}
 
       <div class="card">
         <div class="card-title">Payout Summary by Player</div>
@@ -493,7 +502,16 @@
 
       <div class="card">
         <div class="card-title">Individual Bet Breakdown</div>
-        ${details.map(p => `
+        ${details.map(p => {
+          let rightHtml;
+          if (p.refund) {
+            rightHtml = `<span class="payout-won">${fmt(p.payout)}</span><span class="payout-bet" style="color:#e65100">refund</span>`;
+          } else if (p.payout > 0) {
+            rightHtml = `<span class="payout-won">${fmt(p.payout)}</span><span class="payout-bet">bet ${fmt(p.amount)}</span>`;
+          } else {
+            rightHtml = `<span class="payout-lost">No payout</span><span class="payout-bet">bet ${fmt(p.amount)}</span>`;
+          }
+          return `
           <div class="payout-item">
             <div class="payout-left">
               <div class="p-bettor">${p.bettor}</div>
@@ -501,13 +519,9 @@
                 <span class="pill pill-${p.type}">${p.type}</span>${p.entrant}
               </div>
             </div>
-            <div class="payout-right">
-              ${p.payout > 0
-                ? `<span class="payout-won">${fmt(p.payout)}</span><span class="payout-bet">bet ${fmt(p.amount)}</span>`
-                : `<span class="payout-lost">No payout</span><span class="payout-bet">bet ${fmt(p.amount)}</span>`}
-            </div>
-          </div>
-        `).join('')}
+            <div class="payout-right">${rightHtml}</div>
+          </div>`;
+        }).join('')}
       </div>
     `;
 

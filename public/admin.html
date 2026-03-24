@@ -200,7 +200,7 @@
     <label for="sel-3rd">3rd Place</label>
     <select id="sel-3rd"><option value="">-- Select --</option></select>
 
-    <button class="btn btn-green" onclick="submitResults()">Calculate Payouts</button>
+    <button class="btn btn-green" id="results-submit-btn" onclick="submitResults()">Calculate Payouts</button>
   </div>
 
   <!-- Payouts (shown after results) -->
@@ -309,14 +309,24 @@
       ).join('');
     }
 
-    // Payouts
+    // Results form — always visible; pre-populate if results already exist
+    const resultsBtn = document.getElementById('results-submit-btn');
+    if (s.results) {
+      const [r1, r2, r3] = s.results;
+      document.getElementById('sel-1st').value = r1;
+      document.getElementById('sel-2nd').value = r2;
+      document.getElementById('sel-3rd').value = r3;
+      resultsBtn.textContent = 'Update Results';
+    } else {
+      resultsBtn.textContent = 'Calculate Payouts';
+    }
+
+    // Payouts section — show when results exist
     if (s.status === 'final' && s.payouts && s.results) {
       document.getElementById('payouts-section').style.display = 'block';
-      document.getElementById('results-card').style.display = 'none';
       renderPayouts(s);
     } else {
       document.getElementById('payouts-section').style.display = 'none';
-      document.getElementById('results-card').style.display = 'block';
     }
   }
 
@@ -355,16 +365,22 @@
 
     // Detail
     const details = [...s.payouts].sort((a, b) => b.payout - a.payout);
-    document.getElementById('detail-tbody').innerHTML = details.map(p => `
-      <tr>
+    document.getElementById('detail-tbody').innerHTML = details.map(p => {
+      let payoutCell;
+      if (p.refund) {
+        payoutCell = `<span style="color:#f57c00;font-weight:700">${fmt(p.payout)}</span> <span style="font-size:0.7rem;background:#fff3e0;color:#e65100;padding:1px 5px;border-radius:4px;font-weight:700">REFUND</span>`;
+      } else if (p.payout > 0) {
+        payoutCell = `<span class="payout-win">${fmt(p.payout)}</span>`;
+      } else {
+        payoutCell = `<span class="payout-zero">—</span>`;
+      }
+      return `<tr>
         <td>${p.bettor}</td>
         <td><span class="pill pill-${p.type}">${p.type}</span> ${p.entrant}</td>
         <td style="text-align:right">${fmt(p.amount)}</td>
-        <td style="text-align:right" class="${p.payout > 0 ? 'payout-win' : 'payout-zero'}">
-          ${p.payout > 0 ? fmt(p.payout) : '—'}
-        </td>
-      </tr>
-    `).join('');
+        <td style="text-align:right">${payoutCell}</td>
+      </tr>`;
+    }).join('');
   }
 
   async function fetchState() {
@@ -409,7 +425,11 @@
       msgEl.innerHTML = '<div class="msg-error">All 3 must be different players.</div>'; return;
     }
 
-    if (!confirm(`Confirm results?\n\n1st: ${first}\n2nd: ${second}\n3rd: ${third}\n\nThis will close betting and calculate payouts.`)) return;
+    const isUpdate = appState?.results != null;
+    const confirmMsg = isUpdate
+      ? `Update results?\n\n1st: ${first}\n2nd: ${second}\n3rd: ${third}\n\nPayouts will be recalculated.`
+      : `Confirm results?\n\n1st: ${first}\n2nd: ${second}\n3rd: ${third}\n\nThis will close betting and calculate payouts.`;
+    if (!confirm(confirmMsg)) return;
 
     try {
       const res = await fetch('/api/results', {
