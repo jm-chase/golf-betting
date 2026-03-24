@@ -188,8 +188,10 @@
     .entrant-name { font-weight: 600; }
     .entrant-hcp  { font-size: 0.75rem; color: var(--muted); display: block; }
 
-    .odds-val  { font-weight: 800; color: var(--green-dark); }
-    .odds-none { color: #bbb; font-size: 0.8rem; }
+    .odds-plus  { font-weight: 800; color: var(--green-dark); }
+    .odds-minus { font-weight: 800; color: var(--blue); }
+    .odds-bad   { font-weight: 700; color: #c62828; font-size: 0.8rem; }
+    .odds-none  { color: #bbb; font-size: 0.8rem; }
 
     /* ---- History ---- */
     .bet-item {
@@ -314,7 +316,7 @@
       <div class="pool-amount" id="show-pool">$0.00</div>
     </div>
   </div>
-  <p class="odds-note">Estimated payout per $1 bet if pools closed now. Show odds assume all 3 top finishers have bets — actual payout may be higher if some don't.</p>
+  <p class="odds-note">+130 means a $100 bet profits $130. -150 means bet $150 to profit $100. Show odds assume all 3 top finishers have bets — actual payout may be higher if some don't.</p>
   <div class="card" style="padding:12px 10px">
     <table>
       <thead>
@@ -367,7 +369,21 @@
 
   function fmtOdds(x) {
     if (x === null || x === undefined) return '<span class="odds-none">-</span>';
-    return `<span class="odds-val">${x.toFixed(2)}x</span>`;
+    const profit = x - 1; // profit per $1 bet (x is total return per $1)
+    if (profit < -0.001) {
+      // Over-backed: you'd lose money even if your pick wins
+      return `<span class="odds-bad" title="Over-backed — payout less than stake">${x.toFixed(2)}x</span>`;
+    }
+    if (profit < 0.001) {
+      // Essentially breakeven (edge case: sole bettor on winner with no other bets)
+      return `<span class="odds-none">EVEN</span>`;
+    }
+    if (profit >= 1) {
+      // Plus odds: how much you profit on a $100 bet
+      return `<span class="odds-plus">+${Math.round(profit * 100)}</span>`;
+    }
+    // Minus odds: how much you must bet to profit $100
+    return `<span class="odds-minus">-${Math.round(100 / profit)}</span>`;
   }
 
   function renderState(s) {
